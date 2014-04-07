@@ -8,7 +8,7 @@ using Renci.SshNet;
 using Renci.SshNet.Common;
 using Renci.SshNet.Sftp;
 
-namespace OdfjsScraper.SyncDatabaseBackups
+namespace OdjfsScraper.SyncDatabaseBackups
 {
     internal class Program
     {

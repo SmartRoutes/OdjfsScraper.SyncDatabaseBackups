@@ -7,8 +7,8 @@
     <ProjectGuid>{6BA28918-63EA-4A6F-B33E-E9CD5F372963}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>OdfjsScraper.SyncDatabaseBackups</RootNamespace>
-    <AssemblyName>OdfjsScraper.SyncDatabaseBackups</AssemblyName>
+    <RootNamespace>OdjfsScraper.SyncDatabaseBackups</RootNamespace>
+    <AssemblyName>$(RootNamespace)</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
