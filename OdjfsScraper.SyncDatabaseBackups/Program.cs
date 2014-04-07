@@ -22,6 +22,8 @@ namespace OdjfsScraper.SyncDatabaseBackups
             string host = null;
             string username = null;
             string password = null;
+            string privateKeyFileName = null;
+            string privateKeyFilePassword = null;
             string localDirectory = null;
             string remoteDirectory = null;
             bool caseInsensitive = false;
@@ -30,8 +32,10 @@ namespace OdjfsScraper.SyncDatabaseBackups
             var p = new OptionSet
             {
                 {"o=", "the remote host", v => host = v},
-                {"u=", "the SFTP username", v => username = v},
-                {"p=", "the SFTP password", v => password = v},
+                {"u=", "the username", v => username = v},
+                {"p=", "the password", v => password = v},
+                {"k=", "the private key file", v => privateKeyFileName = v},
+                {"c=", "the password to the private key file", v => privateKeyFilePassword = v},
                 {"l=", "the local source directory of database backups", v => localDirectory = v},
                 {"r=", "the remote destination directory for the database backups", v => remoteDirectory = v},
                 {"i", "use case-insensitive file name comparison, default: false", v => caseInsensitive = true},
@@ -55,10 +59,6 @@ namespace OdjfsScraper.SyncDatabaseBackups
             {
                 return DisplayArgumentError("-u");
             }
-            if (password == null)
-            {
-                return DisplayArgumentError("-p");
-            }
             if (localDirectory == null)
             {
                 return DisplayArgumentError("-l");
@@ -66,6 +66,21 @@ namespace OdjfsScraper.SyncDatabaseBackups
             if (remoteDirectory == null)
             {
                 return DisplayArgumentError("-r");
+            }
+            if (password == null && privateKeyFileName == null)
+            {
+                Console.Error.WriteLine("Either the -p or -k argument is required.");
+                return DisplayArgumentError(null);
+            }
+            if (password != null && privateKeyFileName != null)
+            {
+                Console.Error.WriteLine("The -p and -k argument cannot be used together.");
+                return DisplayArgumentError(null);
+            }
+            if (privateKeyFileName != null && !File.Exists(privateKeyFileName))
+            {
+                Console.Error.WriteLine("The path specified by the -k argument cannot be found.");
+                return DisplayArgumentError(null);
             }
 
             // get all local files that could be upload
@@ -76,7 +91,19 @@ namespace OdjfsScraper.SyncDatabaseBackups
                 .Where(f => Regex.IsMatch(f, SearchPattern))
                 .ToArray();
 
-            using (var sftp = new SftpClient(host, username, password))
+
+            ConnectionInfo connectionInfo;
+            if (password != null)
+            {
+                connectionInfo = new ConnectionInfo(host, username, new PasswordAuthenticationMethod(username, password));
+            }
+            else
+            {
+                PrivateKeyFile privateKeyFile = privateKeyFilePassword != null ? new PrivateKeyFile(privateKeyFileName, privateKeyFilePassword) : new PrivateKeyFile(privateKeyFileName);
+                connectionInfo = new ConnectionInfo(host, username, new PrivateKeyAuthenticationMethod(username, privateKeyFile));
+            }
+
+            using (var sftp = new SftpClient(connectionInfo))
             {
                 sftp.Connect();
                 sftp.ChangeDirectory(remoteDirectory);
@@ -160,7 +187,10 @@ namespace OdjfsScraper.SyncDatabaseBackups
 
         private static int DisplayArgumentError(string argument)
         {
-            Console.Error.WriteLine("The {0} argument is required.", argument);
+            if (argument != null)
+            {
+                Console.Error.WriteLine("The {0} argument is required.", argument);
+            }
             Console.Error.WriteLine("Use the --help command for more information.");
             return 1;
         }
